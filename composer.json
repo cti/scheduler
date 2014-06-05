@@ -1,0 +1,33 @@
+{
+    "name": "cti/scheduler",
+    "description": "Job Scheduler",
+    "license": "MIT",    
+    "require": {
+        "cti/core": "*",
+        "cti/direct": "*",
+        "cti/storage": "*",
+        "symfony/console": "*",
+        "symfony/filesystem": "*"
+    },
+    "autoload": {
+        "psr-0": {
+            "Build\\" : "build/php/",
+            "Storage\\" : "build/php/",
+            "Command\\" : "src/php/",
+            "Controller\\" : "src/php/",
+            "Direct\\" : "src/php/",
+            "Module\\" : "src/php/"
+        }
+    },    
+    "authors": [
+        {
+            "name": "Dmitry.Krokhin",
+            "email": "nekufa@gmail.com"
+        }
+    ],
+    "scripts": {
+        "post-create-project-cmd": [
+            "bin\\console build"
+        ]
+    }
+}

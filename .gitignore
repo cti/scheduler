@@ -1,0 +1,5 @@
+/.idea/
+/vendor/
+/build/
+/composer.lock
+/resources/php/local.config.php
