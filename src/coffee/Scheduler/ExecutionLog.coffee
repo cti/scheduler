@@ -1,4 +1,4 @@
-Ext.define 'Scheduler.JobLog',
+Ext.define 'Scheduler.ExecutionLog',
 
   extend: 'Ext.grid.Panel'
 

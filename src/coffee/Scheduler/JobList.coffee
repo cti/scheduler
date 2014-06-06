@@ -29,7 +29,9 @@ Ext.define 'Scheduler.JobList',
     ]
 
   store: 
-    fields: ['name', 'status', 'last', 'next']
+    model: 'Model.Job'
+
+  requires: ['Model.Job']
 
   initComponent: ->
 

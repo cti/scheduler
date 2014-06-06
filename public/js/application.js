@@ -15,7 +15,7 @@ Ext.define('Scheduler.Monitor', {
 });
 
 
-Ext.define('Scheduler.JobLog', {
+Ext.define('Scheduler.ExecutionLog', {
   extend: 'Ext.grid.Panel',
   title: 'Execution log',
   tbar: {
@@ -43,7 +43,7 @@ Ext.define('Scheduler.JobLog', {
 
 var x;
 
-Ext.define('Scheduler.JobSchedule', {
+Ext.define('Scheduler.ScheduleEditor', {
   extend: 'Ext.form.Panel',
   title: 'Schedule',
   bodyPadding: 10,
@@ -234,7 +234,6 @@ Ext.define('Scheduler.CommandList', {
 
 Ext.define('Scheduler.JobEditor', {
   extend: 'Ext.panel.Panel',
-  border: false,
   layout: {
     type: "hbox",
     pack: "start",
@@ -272,8 +271,9 @@ Ext.define('Scheduler.JobEditor', {
     });
   },
   initComponent: function() {
-    this.items = [
-      {
+    var leftSide;
+    if (!this.job.get('class')) {
+      leftSide = {
         width: 400,
         border: false,
         layout: {
@@ -283,17 +283,66 @@ Ext.define('Scheduler.JobEditor', {
         },
         items: [
           Ext.create('Scheduler.CommandList', {
+            title: this.job.get('name'),
+            border: false,
             flex: 1
-          }), Ext.create('Scheduler.JobSchedule', {
+          }), Ext.create('Scheduler.ScheduleEditor', {
+            border: false,
             flex: 1
           })
         ]
-      }, Ext.create('Scheduler.JobLog', {
-        flex: 1
+      };
+    }
+    this.items = [
+      leftSide, Ext.create('Scheduler.ExecutionLog', {
+        flex: 1,
+        border: false,
+        style: {
+          borderLeft: '1px solid silver'
+        }
       })
     ];
     return this.callParent(arguments);
   }
+});
+
+
+Ext.define('Model.Generated.Job', {
+  extend: 'Ext.data.Model',
+  name: "job",
+  idProperty: "id_job",
+  fields: [
+    {
+      "name": "id_job",
+      "type": "integer"
+    }, {
+      "name": "class",
+      "type": "string"
+    }, {
+      "name": "dt_last",
+      "type": "date"
+    }, {
+      "name": "dt_next",
+      "type": "date"
+    }, {
+      "name": "id_schedule",
+      "type": "integer"
+    }, {
+      "name": "name",
+      "type": "string"
+    }, {
+      "name": "status",
+      "type": "string"
+    }, {
+      "name": "system",
+      "type": "integer"
+    }
+  ]
+});
+
+
+Ext.define('Model.Job', {
+  extend: 'Model.Generated.Job'
 });
 
 
@@ -333,8 +382,9 @@ Ext.define('Scheduler.JobList', {
     }
   ],
   store: {
-    fields: ['name', 'status', 'last', 'next']
+    model: 'Model.Job'
   },
+  requires: ['Model.Job'],
   initComponent: function() {
     var _this = this;
     this.updateList();

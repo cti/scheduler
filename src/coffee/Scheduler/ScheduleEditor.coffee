@@ -1,4 +1,4 @@
-Ext.define 'Scheduler.JobSchedule',
+Ext.define 'Scheduler.ScheduleEditor',
 
   extend: 'Ext.form.Panel'
 
