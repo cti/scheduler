@@ -17,7 +17,7 @@ return array(
     'Cti\Core\Application\Generator' => array(
         'modules' => array(
             'direct' => 'Cti\Direct\Module',
-            'storage' => 'Cti\Storage\Module'
+            'Cti\Storage\Storage'
         )
     ),
 

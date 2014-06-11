@@ -12,11 +12,14 @@
     "autoload": {
         "psr-0": {
             "Build\\" : "build/php/",
-            "Storage\\" : "build/php/",
             "Command\\" : "src/php/",
             "Controller\\" : "src/php/",
             "Direct\\" : "src/php/",
-            "Module\\" : "src/php/"
+            "Model\\" : "src/php/",
+            "Module\\" : "src/php/",
+            "Repository\\" : "src/php/",
+            "Storage\\" : "build/php/",
+            "Scheduler\\" : "src/php/"
         }
     },    
     "authors": [

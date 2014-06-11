@@ -15,10 +15,7 @@ class Scheduler_20140605_103620
 
         $job = $schema->createModel('job', 'Job', array(
             'name' => 'Name',
-            'dt_last' => 'Last run',
-            'dt_next' => 'Next run',
             'status' => 'Status',
-            'class' => 'Client class name',
             array('system', 'integer', 'System command'),
         ));
 
@@ -38,9 +35,11 @@ class Scheduler_20140605_103620
         ));
         $command->hasOne($job);
 
+        // New, Active, Complete, Fail
         $task = $schema->createModel('task', 'Task', array(
-            'dt_start' => 'Start date',
-            'dt_end' => 'End date',
+            'dt_scheduled' => 'Scheduled start date',
+            'dt_start' => 'Fact start date',
+            'dt_end' => 'Fact end date',
             'status' => 'Status',
             array('success', 'integer', 'Success'),
         ));
