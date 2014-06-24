@@ -1,14 +1,186 @@
 
+Ext.define('Cti.Panel', {
+  extend: 'Ext.panel.Panel',
+  border: false,
+  layout: 'fit',
+  initComponent: function() {
+    var toolbar;
+    this.bbar = toolbar = Ext.create('Ext.toolbar.Toolbar');
+    return this.callParent(arguments);
+  },
+  setContent: function(content) {
+    this.removeAll();
+    this.add(content);
+    return this.doLayout();
+  },
+  updateToolbar: function(toolbar) {
+    var item, _i, _len, _ref, _results;
+    this.addDocked(toolbar);
+    _ref = this.getDockedItems();
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      item = _ref[_i];
+      if (item !== toolbar) {
+        _results.push(this.removeDocked(item));
+      } else {
+        _results.push(void 0);
+      }
+    }
+    return _results;
+  }
+});
+
+
+Ext.define('Cti.Viewport', {
+  extend: 'Ext.Viewport',
+  layout: 'fit',
+  initComponent: function() {
+    this.items = [this.panel = Ext.create('Cti.Panel')];
+    return this.callParent(arguments);
+  }
+});
+
+
+Ext.define('Cti.Welcome', {
+  extend: 'Ext.panel.Panel',
+  bodyPadding: 10,
+  border: false,
+  title: 'Welcome',
+  html: 'Change your Application.defaultClass property'
+});
+
+
+Ext.define('Cti.Application', {
+  classTokens: {},
+  dynamic: {},
+  tokenClasees: {},
+  viewportClass: 'Cti.Viewport',
+  defaultClass: 'Cti.Welcome',
+  constructor: function(config) {
+    var cls, name, _ref,
+      _this = this;
+    _ref = Ext.ClassManager.classes;
+    for (name in _ref) {
+      cls = _ref[name];
+      if (cls.prototype && cls.prototype.token) {
+        this.registerToken(cls.prototype.token, name);
+      }
+    }
+    Ext.apply(this, config);
+    Ext.History.on('change', function(url) {
+      return _this.processToken(url);
+    });
+    this.viewport = Ext.create(this.viewportClass);
+    this.panel = this.viewport.panel;
+    if (Ext.History.currentToken) {
+      this.processToken(Ext.History.currentToken);
+    } else if (this.defaultClass) {
+      this.launch(this.defaultClass);
+    }
+    return this;
+  },
+  registerToken: function(token, cls) {
+    var items, k, v, _i, _len, _results;
+    if (token.indexOf(':') !== -1) {
+      this.dynamic[cls] = {
+        params: [],
+        basis: []
+      };
+      items = token.split('/');
+      _results = [];
+      for (k = _i = 0, _len = items.length; _i < _len; k = ++_i) {
+        v = items[k];
+        if (Ext.String.startsWith(v, ':')) {
+          _results.push(this.dynamic[cls].params[k] = v.substr(1));
+        } else {
+          _results.push(this.dynamic[cls].basis[k] = v);
+        }
+      }
+      return _results;
+    } else {
+      this.tokenClasees[token] = cls;
+      return this.classTokens[cls] = token;
+    }
+  },
+  processToken: function(token) {
+    var cfg, chain, cls, dynamic, found, k, v, _i, _j, _len, _len1, _ref, _ref1, _ref2;
+    if (this.tokenClasees[token]) {
+      return this.panel.setContent(Ext.create(this.tokenClasees[token]));
+    } else {
+      chain = token.split('/');
+      _ref = this.dynamic;
+      for (cls in _ref) {
+        dynamic = _ref[cls];
+        found = true;
+        _ref1 = dynamic.basis;
+        for (k = _i = 0, _len = _ref1.length; _i < _len; k = ++_i) {
+          v = _ref1[k];
+          if (v && chain[k] !== v) {
+            found = false;
+          }
+        }
+        if (found) {
+          cfg = {};
+          _ref2 = dynamic.params;
+          for (k = _j = 0, _len1 = _ref2.length; _j < _len1; k = ++_j) {
+            v = _ref2[k];
+            if (k) {
+              cfg[v] = chain[k];
+            }
+          }
+          return this.panel.setContent(Ext.create(cls, cfg));
+        }
+      }
+      return alert('No token processing: ' + token);
+    }
+  },
+  launch: function(cls, cfg) {
+    var chain, k, v, _i, _j, _len, _len1, _ref, _ref1;
+    if (this.classTokens[cls]) {
+      return Ext.History.add(this.classTokens[cls]);
+    } else if (this.dynamic[cls]) {
+      chain = [];
+      _ref = this.dynamic[cls].params;
+      for (k = _i = 0, _len = _ref.length; _i < _len; k = ++_i) {
+        v = _ref[k];
+        chain[k] = cfg[v];
+      }
+      _ref1 = this.dynamic[cls].basis;
+      for (k = _j = 0, _len1 = _ref1.length; _j < _len1; k = ++_j) {
+        v = _ref1[k];
+        chain[k] = v;
+      }
+      return Ext.History.add(chain.join('/'));
+    } else {
+      return this.panel.setContent(Ext.create(cls, cfg));
+    }
+  }
+});
+
+
+Ext.define('Cti', {
+  statics: {
+    start: function(config) {
+      return Cti.application = Ext.create('Cti.Application', config);
+    },
+    launch: function(cls, cfg) {
+      return Cti.application.launch(cls, cfg);
+    }
+  }
+});
+
+
 Ext.define('Scheduler.Monitor', {
   extend: 'Ext.panel.Panel',
   title: 'Monitoring',
   bodyPadding: 10,
   html: 'List of tasks: 10 last + current + 10 next',
+  token: 'monitor',
   bbar: [
     {
       text: 'Go to Job List',
       handler: function() {
-        return this.up('panel').goBack();
+        return Cti.launch('Scheduler.JobList');
       }
     }
   ]
@@ -243,7 +415,7 @@ Ext.define('Scheduler.JobEditor', {
     {
       text: 'Go to Job List',
       handler: function() {
-        return this.up('panel').goBack();
+        return Cti.launch('Scheduler.JobList');
       }
     }, '-', {
       text: 'Save configuration',
@@ -257,44 +429,24 @@ Ext.define('Scheduler.JobEditor', {
       }
     }
   ],
+  token: 'job/:id_job',
   save: function() {
-    return this.goBack();
+    return Cti.launch('Scheduler.JobList');
   },
   "delete": function() {
     var _this = this;
     return Ext.Msg.confirm('Confirm', 'Are you sure to delete this job?', function(btn) {
-      if (btn === 'yes') {
-        return Scheduler.deleteJob(_this.job.get('id_job'), function() {
-          return _this.goBack();
-        });
-      }
+      return Scheduler.deleteJob(_this.id_job, function() {
+        if (btn === 'yes') {
+          return Cti.launch('Scheduler.JobList');
+        }
+      });
     });
   },
   initComponent: function() {
-    var leftSide;
-    if (!this.job.get('class')) {
-      leftSide = {
-        width: 400,
-        border: false,
-        layout: {
-          type: "vbox",
-          pack: "start",
-          align: "stretch"
-        },
-        items: [
-          Ext.create('Scheduler.CommandList', {
-            title: this.job.get('name'),
-            border: false,
-            flex: 1
-          }), Ext.create('Scheduler.ScheduleEditor', {
-            border: false,
-            flex: 1
-          })
-        ]
-      };
-    }
+    this.title = 'Job #' + this.id_job;
     this.items = [
-      leftSide, Ext.create('Scheduler.ExecutionLog', {
+      Ext.create('Scheduler.ExecutionLog', {
         flex: 1,
         border: false,
         style: {
@@ -307,48 +459,10 @@ Ext.define('Scheduler.JobEditor', {
 });
 
 
-Ext.define('Model.Generated.Job', {
-  extend: 'Ext.data.Model',
-  name: "job",
-  idProperty: "id_job",
-  fields: [
-    {
-      "name": "id_job",
-      "type": "integer"
-    }, {
-      "name": "class",
-      "type": "string"
-    }, {
-      "name": "dt_last",
-      "type": "date"
-    }, {
-      "name": "dt_next",
-      "type": "date"
-    }, {
-      "name": "id_schedule",
-      "type": "integer"
-    }, {
-      "name": "name",
-      "type": "string"
-    }, {
-      "name": "status",
-      "type": "string"
-    }, {
-      "name": "system",
-      "type": "integer"
-    }
-  ]
-});
-
-
-Ext.define('Model.Job', {
-  extend: 'Model.Generated.Job'
-});
-
-
 Ext.define('Scheduler.JobList', {
   title: 'Job list',
   extend: 'Ext.grid.Panel',
+  token: 'list',
   columns: [
     {
       header: 'Name',
@@ -382,22 +496,15 @@ Ext.define('Scheduler.JobList', {
     }
   ],
   store: {
-    model: 'Model.Job'
+    fields: ['name', 'status', 'last', 'next', 'schedule']
   },
-  requires: ['Model.Job'],
   initComponent: function() {
-    var _this = this;
-    this.updateList();
     this.callParent(arguments);
+    this.updateList();
     return this.on('itemclick', function() {
-      return _this.setContent(Ext.create('Scheduler.JobEditor', {
-        job: _this.getSelectionModel().getSelection()[0],
-        goBack: function() {
-          return _this.setContent(Ext.create('Scheduler.JobList', {
-            setContent: _this.setContent
-          }));
-        }
-      }));
+      return Cti.launch('Scheduler.JobEditor', {
+        id_job: this.getSelectionModel().getSelection()[0].data.id_job
+      });
     });
   },
   updateList: function() {
@@ -410,17 +517,7 @@ Ext.define('Scheduler.JobList', {
     {
       text: 'Monitoring',
       handler: function() {
-        var grid,
-          _this = this;
-        grid = this.up('grid');
-        return grid.setContent(Ext.create('Scheduler.Monitor', {
-          job: grid.getSelectionModel().getSelection()[0],
-          goBack: function() {
-            return grid.setContent(Ext.create('Scheduler.JobList', {
-              setContent: grid.setContent
-            }));
-          }
-        }));
+        return Cti.launch('Scheduler.Monitor');
       }
     }, '-', {
       text: 'Create new job',
@@ -468,35 +565,8 @@ Ext.define('Scheduler.JobList', {
 });
 
 
-Ext.define('Scheduler.Application', {
-  extend: 'Ext.Viewport',
-  layout: 'border',
-  initComponent: function() {
-    var container,
-      _this = this;
-    this.items = [
-      container = Ext.create('Ext.panel.Panel', {
-        region: 'center',
-        layout: 'fit',
-        border: false,
-        items: [
-          Ext.create('Scheduler.JobList', {
-            region: 'center',
-            setContent: function(content) {
-              container.removeAll();
-              container.add(content);
-              return container.doLayout();
-            }
-          })
-        ]
-      })
-    ];
-    return this.callParent(arguments);
-  }
-});
-
-
 Ext.onReady(function() {
+  var app;
   Ext.direct.Manager.on({
     exception: function(e) {
       var text;
@@ -505,6 +575,9 @@ Ext.onReady(function() {
       return console.log(text);
     }
   });
-  return Ext.create('Scheduler.Application');
+  app = Cti.start({
+    defaultClass: 'Scheduler.JobList'
+  });
+  return app.panel.updateToolbar();
 });
 

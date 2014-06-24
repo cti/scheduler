@@ -10,13 +10,8 @@ class DefaultController
 {
     public function get(Application $application)
     {
-        $application->getCoffee()->build('application');
-
-        $application->getFenom()->display('index', array(
-            'base' => $application->getWeb()->getUrl(),
-            'script' => 'public/js/application.js',
-            'direct' => $application->getDirect()->getUrl()
-        ));
+        $layout = $application->getSencha()->createLayout();
+        $layout->setScript('application')->display();
     }
 
     /**

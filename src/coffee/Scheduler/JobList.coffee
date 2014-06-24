@@ -3,6 +3,8 @@ Ext.define 'Scheduler.JobList',
   title: 'Job list'
   extend: 'Ext.grid.Panel'
 
+  token: 'list'
+
   columns: [
       header: 'Name'
       dataIndex: 'name'
@@ -24,34 +26,26 @@ Ext.define 'Scheduler.JobList',
       width: 150
     ,
       header: 'Schedule'
-      dataIndex: 'schedule'
+      dataIndex: 'schedule' 
       width: 120
     ]
 
   store: 
-    model: 'Model.Job'
-
-  requires: ['Model.Job']
+    fields:['name', 'status', 'last', 'next', 'schedule']
 
   initComponent: ->
+    @callParent arguments
 
     @updateList()
-    @callParent arguments
-    @on 'itemclick', => 
-      @setContent Ext.create 'Scheduler.JobEditor',
-        job: @getSelectionModel().getSelection()[0]
-        goBack: => @setContent Ext.create 'Scheduler.JobList', setContent: @setContent
-      
+    @on 'itemclick', -> Cti.launch 'Scheduler.JobEditor', id_job: @getSelectionModel().getSelection()[0].data.id_job
+
   updateList:->
     Scheduler.getJobList (response) => @store.loadData response.data
 
   bbar: [
     text:'Monitoring'
-    handler: ->
-      grid = @up('grid')
-      grid.setContent Ext.create 'Scheduler.Monitor',
-        job: grid.getSelectionModel().getSelection()[0]
-        goBack: => grid.setContent Ext.create 'Scheduler.JobList', setContent: grid.setContent
+    handler: -> Cti.launch 'Scheduler.Monitor'
+
     '-'
     text: 'Create new job'
     handler: -> 
